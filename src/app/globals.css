@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --french-blue: #002395;
+  --french-red: #ED2939;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body {
+  background-color: #0f172a;
+  color: white;
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  background-color: #1e293b !important;
+}
+
+.leaflet-tile-pane {
+  filter: brightness(0.9);
+}
