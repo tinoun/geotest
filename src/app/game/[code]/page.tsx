@@ -38,6 +38,7 @@ export default function GamePage() {
   const [totalScores, setTotalScores] = useState<Record<string, number>>({})
   const [players, setPlayers] = useState<Player[]>([])
   const [finalScores, setFinalScores] = useState<Array<{ id: string; pseudo: string; score: number }>>([])
+  const [showSaucisse, setShowSaucisse] = useState(false)
   const [roundHistory, setRoundHistory] = useState<Array<{
     round: number
     cityName: string
@@ -65,6 +66,13 @@ export default function GamePage() {
   const roundRef = useRef(0)
   const citiesRef = useRef<City[]>([])
   const hostTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Auto-dismiss saucisse après 3s
+  useEffect(() => {
+    if (!showSaucisse) return
+    const t = setTimeout(() => setShowSaucisse(false), 3000)
+    return () => clearTimeout(t)
+  }, [showSaucisse])
 
   // Sync refs with state
   useEffect(() => { phaseRef.current = phase }, [phase])
@@ -205,6 +213,12 @@ export default function GamePage() {
         const histPlayers: Player[] = []
 
         for (const msg of items) {
+          if (msg.name === 'game:restart') {
+            // Hard reset — nouvelle partie lancée après ce point
+            histCity = null; histRound = 0; histStartTime = 0
+            histGuesses.length = 0; histTotalScores = {}; histPlayers.length = 0
+            activeRound = false
+          }
           if (msg.name === 'player:join') {
             const d = msg.data as { playerId: string; pseudo: string; isHost: boolean }
             if (!histPlayers.find(p => p.id === d.playerId)) {
@@ -382,6 +396,11 @@ export default function GamePage() {
       setPhase('game-over')
       phaseRef.current = 'game-over'
       setFinalScores(data.finalScores)
+      setShowSaucisse(true)
+    })
+
+    channel.subscribe('game:restart', () => {
+      router.push(`/room/${code}`)
     })
 
     return () => {
@@ -437,6 +456,25 @@ export default function GamePage() {
           <div className="flex-1 bg-white" />
           <div className="flex-1" style={{ backgroundColor: '#ED2939' }} />
         </div>
+
+        {/* OPHIS LA SAUCISSE */}
+        {showSaucisse && (
+          <div
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center cursor-pointer select-none"
+            style={{ background: 'rgba(0,0,0,0.97)' }}
+            onClick={() => setShowSaucisse(false)}
+          >
+            <p className="font-black uppercase text-center leading-none"
+              style={{ fontSize: 'clamp(3rem, 14vw, 9rem)', color: '#facc15', textShadow: '0 0 60px rgba(250,204,21,0.5)' }}>
+              OPHIS
+            </p>
+            <p className="font-black uppercase text-center leading-none mt-2"
+              style={{ fontSize: 'clamp(2rem, 10vw, 6rem)', color: '#ED2939', textShadow: '0 0 60px rgba(237,41,57,0.5)' }}>
+              LA SAUCISSE
+            </p>
+            <p className="text-slate-600 text-sm mt-12 animate-pulse">cliquez pour continuer</p>
+          </div>
+        )}
 
         <div className="w-full max-w-lg">
           <div className="text-center mb-8">
@@ -521,13 +559,24 @@ export default function GamePage() {
             </div>
           )}
 
-          <button
-            onClick={() => router.push('/')}
-            className="w-full py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
-            style={{ backgroundColor: '#002395' }}
-          >
-            Retour à l&apos;accueil
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                channelRef.current?.publish('game:restart', {})
+              }}
+              className="flex-1 py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
+              style={{ backgroundColor: '#22c55e' }}
+            >
+              Nouvelle partie
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="flex-1 py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
+              style={{ backgroundColor: '#002395' }}
+            >
+              Accueil
+            </button>
+          </div>
         </div>
       </main>
     )
@@ -605,16 +654,14 @@ export default function GamePage() {
 
         {/* My guess feedback */}
         {phase === 'guessing' && myGuess && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
-            <div className="bg-slate-800/90 backdrop-blur-sm border border-slate-600 rounded-xl px-6 py-3 text-center shadow-lg">
-              <p className="text-sm text-slate-400">Votre réponse</p>
-              <p className="font-bold text-white">
-                {Math.round(myGuess.distance)} km —{' '}
-                <span style={{ color: '#22c55e' }}>+{myGuess.score} pts</span>
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10">
+            <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-600 rounded-2xl px-8 py-5 text-center shadow-2xl">
+              <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Distance</p>
+              <p className="text-6xl font-black leading-none" style={{ color: distanceColor(myGuess.distance) }}>
+                {Math.round(myGuess.distance)} <span className="text-3xl font-bold">km</span>
               </p>
-              <p className="text-xs text-slate-500 mt-1 animate-pulse">
-                En attente des autres joueurs...
-              </p>
+              <p className="text-2xl font-bold mt-2" style={{ color: '#22c55e' }}>+{myGuess.score} pts</p>
+              <p className="text-xs text-slate-500 mt-3 animate-pulse">En attente des autres joueurs...</p>
             </div>
           </div>
         )}
