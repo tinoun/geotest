@@ -7,12 +7,13 @@ interface OtherGuess {
   lat: number
   lng: number
   color: string
+  distance?: number
 }
 
 interface Props {
   onGuess?: (lat: number, lng: number) => void
   disabled?: boolean
-  myGuess?: { lat: number; lng: number } | null
+  myGuess?: { lat: number; lng: number; distance?: number } | null
   otherGuesses?: OtherGuess[]
   correctAnswer?: { lat: number; lng: number; name: string } | null
   showLines?: boolean
@@ -20,7 +21,7 @@ interface Props {
 
 const GUESS_COLORS = ['#ef4444', '#f97316', '#a855f7', '#06b6d4', '#84cc16']
 
-function createDivIcon(color: string, label?: string): L.DivIcon {
+function createDivIcon(color: string, label?: string, sublabel?: string): L.DivIcon {
   return L.divIcon({
     html: `<div style="
       width: 20px;
@@ -34,13 +35,16 @@ function createDivIcon(color: string, label?: string): L.DivIcon {
       top: 22px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.82);
       color: white;
       font-size: 11px;
-      padding: 2px 5px;
-      border-radius: 3px;
+      font-weight: 600;
+      padding: 2px 6px 3px;
+      border-radius: 4px;
       white-space: nowrap;
-    ">${label}</div>` : ''}`,
+      text-align: center;
+      line-height: 1.4;
+    ">${label}${sublabel ? `<br/><span style="color:#94a3b8;font-size:10px;font-weight:400;">${sublabel}</span>` : ''}</div>` : ''}`,
     className: '',
     iconSize: [20, 20],
     iconAnchor: [10, 10],
@@ -147,8 +151,9 @@ export default function FranceMap({
     }
 
     if (myGuess) {
+      const distLabel = myGuess.distance !== undefined ? `${Math.round(myGuess.distance)} km` : undefined
       const marker = L.marker([myGuess.lat, myGuess.lng], {
-        icon: createDivIcon('#3b82f6', 'Vous'),
+        icon: createDivIcon('#3b82f6', 'Vous', distLabel),
       }).addTo(map)
       myMarkerRef.current = marker
     }
@@ -164,8 +169,9 @@ export default function FranceMap({
 
     otherGuesses.forEach((guess, i) => {
       const color = guess.color || GUESS_COLORS[i % GUESS_COLORS.length]
+      const distLabel = guess.distance !== undefined ? `${Math.round(guess.distance)} km` : undefined
       const marker = L.marker([guess.lat, guess.lng], {
-        icon: createDivIcon(color, guess.pseudo),
+        icon: createDivIcon(color, guess.pseudo, distLabel),
       }).addTo(map)
       otherMarkersRef.current.push(marker)
     })
