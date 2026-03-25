@@ -16,6 +16,14 @@ const TOTAL_ROUNDS = 10
 const ROUND_DURATION = 15
 const GUESS_COLORS = ['#ef4444', '#f97316', '#a855f7', '#06b6d4', '#84cc16']
 
+function distanceColor(km: number): string {
+  if (km < 50) return '#22c55e'
+  if (km < 150) return '#84cc16'
+  if (km < 300) return '#facc15'
+  if (km < 500) return '#f97316'
+  return '#ef4444'
+}
+
 export default function GamePage() {
   const router = useRouter()
   const params = useParams()
@@ -30,6 +38,12 @@ export default function GamePage() {
   const [totalScores, setTotalScores] = useState<Record<string, number>>({})
   const [players, setPlayers] = useState<Player[]>([])
   const [finalScores, setFinalScores] = useState<Array<{ id: string; pseudo: string; score: number }>>([])
+  const [roundHistory, setRoundHistory] = useState<Array<{
+    round: number
+    cityName: string
+    guesses: Guess[]
+    roundScores: Record<string, number>
+  }>>([])
 
   // Round results data
   const [roundResultsData, setRoundResultsData] = useState<{
@@ -347,6 +361,7 @@ export default function GamePage() {
         roundScores: Record<string, number>;
         totalScores: Record<string, number>;
       }
+      const capturedRound = roundRef.current
       setPhase('round-results')
       phaseRef.current = 'round-results'
       setAllGuesses(data.guesses)
@@ -354,6 +369,12 @@ export default function GamePage() {
       setTotalScores(data.totalScores)
       totalScoresRef.current = data.totalScores
       setRoundResultsData(data)
+      setRoundHistory(prev => [...prev, {
+        round: capturedRound,
+        cityName: data.city.name,
+        guesses: data.guesses,
+        roundScores: data.roundScores,
+      }])
     })
 
     channel.subscribe('game:end', (message) => {
@@ -402,6 +423,7 @@ export default function GamePage() {
       lat: g.lat,
       lng: g.lng,
       color: GUESS_COLORS[i % GUESS_COLORS.length],
+      distance: g.distance,
     }))
 
   const showResults = phase === 'round-results' && roundResultsData
@@ -450,6 +472,54 @@ export default function GamePage() {
               ))}
             </div>
           </div>
+
+          {/* Per-round detail */}
+          {roundHistory.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+                <span>📊</span> Détail par manche
+              </h2>
+              <div className="space-y-3">
+                {roundHistory.map(entry => {
+                  const sorted = [...entry.guesses].sort((a, b) => (entry.roundScores[b.playerId] ?? 0) - (entry.roundScores[a.playerId] ?? 0))
+                  // add players who didn't guess
+                  const allIds = finalScores.map(f => f.id)
+                  const guessedIds = entry.guesses.map(g => g.playerId)
+                  const noGuess = allIds.filter(id => !guessedIds.includes(id))
+                  return (
+                    <div key={entry.round} className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                      <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                        Manche {entry.round} · <span className="text-yellow-400 font-bold normal-case text-sm">{entry.cityName}</span>
+                      </p>
+                      <div className="space-y-1.5">
+                        {sorted.map((g, i) => (
+                          <div key={g.playerId} className={`flex items-center gap-3 text-sm ${g.playerId === info?.playerId ? 'text-white' : 'text-slate-300'}`}>
+                            <span className="w-5 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`}</span>
+                            <span className="flex-1 font-medium truncate">{g.pseudo}</span>
+                            <span className="font-bold" style={{ color: distanceColor(g.distance) }}>
+                              {Math.round(g.distance)} km
+                            </span>
+                            <span className="text-slate-400 w-16 text-right">+{entry.roundScores[g.playerId] ?? 0} pts</span>
+                          </div>
+                        ))}
+                        {noGuess.map(id => {
+                          const player = finalScores.find(f => f.id === id)
+                          return player ? (
+                            <div key={id} className="flex items-center gap-3 text-sm text-slate-500">
+                              <span className="w-5 text-center">—</span>
+                              <span className="flex-1">{player.pseudo}</span>
+                              <span className="text-slate-600">pas de réponse</span>
+                              <span className="text-slate-600 w-16 text-right">+0 pts</span>
+                            </div>
+                          ) : null
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() => router.push('/')}
