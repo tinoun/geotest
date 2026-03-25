@@ -175,20 +175,102 @@ export default function GamePage() {
     const channel = client.channels.get(`geoguesser:${code}`)
     channelRef.current = channel
 
-    // Publish join
-    channel.attach().then(() => {
+    // Attach, replay history to catch up, then publish join
+    channel.attach().then(async () => {
+      // --- History catchup: handle late arrivals ---
+      try {
+        const historyPage = await channel.history({ limit: 50 })
+        const items = [...historyPage.items].reverse() // oldest → newest
+
+        let activeRound = false
+        let histCity: City | null = null
+        let histRound = 0
+        let histStartTime = 0
+        const histGuesses: Guess[] = []
+        let histTotalScores: Record<string, number> = {}
+        const histPlayers: Player[] = []
+
+        for (const msg of items) {
+          if (msg.name === 'player:join') {
+            const d = msg.data as { playerId: string; pseudo: string; isHost: boolean }
+            if (!histPlayers.find(p => p.id === d.playerId)) {
+              histPlayers.push({ id: d.playerId, pseudo: d.pseudo, isHost: d.isHost })
+            }
+          }
+          if (msg.name === 'player:list') {
+            const d = msg.data as { players: Player[] }
+            histPlayers.splice(0, histPlayers.length, ...d.players)
+          }
+          if (msg.name === 'round:new') {
+            const d = msg.data as { round: number; total: number; city: City; startTime: number }
+            histCity = d.city
+            histRound = d.round
+            histStartTime = d.startTime
+            histGuesses.length = 0
+            activeRound = true
+            if (!info.isHost) citiesRef.current[d.round - 1] = d.city
+          }
+          if (msg.name === 'player:guess' && activeRound) {
+            const d = msg.data as Guess
+            if (!histGuesses.find(g => g.playerId === d.playerId)) histGuesses.push(d)
+          }
+          if (msg.name === 'round:end') {
+            const d = msg.data as { totalScores: Record<string, number> }
+            activeRound = false
+            histTotalScores = d.totalScores
+            histGuesses.length = 0
+          }
+          if (msg.name === 'game:end') {
+            const d = msg.data as { finalScores: Array<{ id: string; pseudo: string; score: number }> }
+            setPhase('game-over')
+            phaseRef.current = 'game-over'
+            setFinalScores(d.finalScores)
+            channel.publish('player:join', { playerId: info.playerId, pseudo: info.pseudo, isHost: info.isHost })
+            return
+          }
+        }
+
+        if (histPlayers.length > 0) {
+          setPlayers(histPlayers)
+          playersRef.current = histPlayers
+        }
+        if (Object.keys(histTotalScores).length > 0) {
+          setTotalScores(histTotalScores)
+          totalScoresRef.current = histTotalScores
+        }
+        if (activeRound && histCity) {
+          const elapsed = (Date.now() - histStartTime) / 1000
+          if (elapsed < ROUND_DURATION) {
+            setPhase('guessing')
+            phaseRef.current = 'guessing'
+            setCurrentCity(histCity)
+            currentCityRef.current = histCity
+            setRound(histRound)
+            roundRef.current = histRound
+            setRoundStartTime(histStartTime)
+            setAllGuesses([...histGuesses])
+            allGuessesRef.current = [...histGuesses]
+            const mine = histGuesses.find(g => g.playerId === info.playerId)
+            if (mine) setMyGuess({ lat: mine.lat, lng: mine.lng, distance: mine.distance, score: mine.score })
+          }
+        }
+      } catch (err) {
+        console.error('History catchup error:', err)
+      }
+
       channel.publish('player:join', {
         playerId: info.playerId,
         pseudo: info.pseudo,
         isHost: info.isHost,
       })
 
-      setPhase('waiting')
+      // Only reset to waiting if history didn't put us in a round
+      setPhase(prev => prev === 'connecting' ? 'waiting' : prev)
 
-      // Host starts round 1 after 3 seconds
-      if (info.isHost) {
+      // Host starts round 1 only if not already in a round from history
+      if (info.isHost && phaseRef.current === 'waiting') {
         setTimeout(() => {
-          startRound(1)
+          if (phaseRef.current === 'waiting') startRound(1)
         }, 3000)
       }
     }).catch((err) => {
@@ -440,7 +522,7 @@ export default function GamePage() {
             onGuess={phase === 'guessing' ? handleGuess : undefined}
             disabled={phase !== 'guessing' || !!myGuess}
             myGuess={myGuess}
-            otherGuesses={phase === 'round-results' ? mapOtherGuesses : []}
+            otherGuesses={mapOtherGuesses}
             correctAnswer={phase === 'round-results' && roundResultsData?.city
               ? { lat: roundResultsData.city.lat, lng: roundResultsData.city.lng, name: roundResultsData.city.name }
               : null}
