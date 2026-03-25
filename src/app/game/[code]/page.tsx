@@ -525,7 +525,7 @@ export default function GamePage() {
             onGuess={phase === 'guessing' ? handleGuess : undefined}
             disabled={phase !== 'guessing' || !!myGuess}
             myGuess={myGuess}
-            otherGuesses={mapOtherGuesses}
+            otherGuesses={phase === 'round-results' ? mapOtherGuesses : []}
             correctAnswer={phase === 'round-results' && roundResultsData?.city
               ? { lat: roundResultsData.city.lat, lng: roundResultsData.city.lng, name: roundResultsData.city.name }
               : null}
