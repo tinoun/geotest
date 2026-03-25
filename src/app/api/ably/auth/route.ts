@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const { clientId } = await req.json()
   const tokenRequest = await rest.auth.createTokenRequest({
     clientId,
-    capability: { '*': ['subscribe', 'publish', 'presence'] }
+    capability: { '*': ['subscribe', 'publish', 'presence', 'history'] }
   })
   return NextResponse.json(tokenRequest)
 }
