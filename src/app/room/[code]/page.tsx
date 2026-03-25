@@ -125,9 +125,8 @@ export default function RoomPage() {
 
   function startGame() {
     if (!channelRef.current) return
-    const channel = channelRef.current
-    channel.publish('game:start', { totalRounds: 10 })
-    router.push(`/game/${code}`)
+    // Don't navigate here — handleGameStart fires for all players including host (Ably echo)
+    channelRef.current.publish('game:start', { totalRounds: 10 })
   }
 
   const info = playerInfoRef.current

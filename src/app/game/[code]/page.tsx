@@ -264,8 +264,11 @@ export default function GamePage() {
         isHost: info.isHost,
       })
 
-      // Only reset to waiting if history didn't put us in a round
-      setPhase(prev => prev === 'connecting' ? 'waiting' : prev)
+      // Update phaseRef synchronously so the check below works immediately
+      if (phaseRef.current === 'connecting') {
+        phaseRef.current = 'waiting'
+        setPhase('waiting')
+      }
 
       // Host starts round 1 only if not already in a round from history
       if (info.isHost && phaseRef.current === 'waiting') {
