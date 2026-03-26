@@ -4,9 +4,9 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Ably from 'ably'
-import type { Player, City, Guess, GamePhase } from '@/types/game'
+import type { Player, City, Guess, GamePhase, Category } from '@/types/game'
 import { haversineDistance, calculateScore } from '@/lib/scoring'
-import { getRandomCities } from '@/lib/cities'
+import { getRandomCitiesByCategory, maxDistanceForCategory } from '@/lib/cities'
 import Timer from '@/components/Timer'
 import RoundResults from '@/components/RoundResults'
 
@@ -39,6 +39,8 @@ export default function GamePage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [finalScores, setFinalScores] = useState<Array<{ id: string; pseudo: string; score: number }>>([])
   const [showSaucisse, setShowSaucisse] = useState(false)
+  const [category, setCategory] = useState<Category>('french')
+  const categoryRef = useRef<Category>('french')
   const [roundHistory, setRoundHistory] = useState<Array<{
     round: number
     cityName: string
@@ -147,7 +149,7 @@ export default function GamePage() {
 
     const distance = haversineDistance(lat, lng, currentCityRef.current.lat, currentCityRef.current.lng)
     const timeLeft = Math.max(0, ROUND_DURATION - (Date.now() - roundStartTime) / 1000)
-    const score = calculateScore(distance, timeLeft)
+    const score = calculateScore(distance, timeLeft, maxDistanceForCategory(categoryRef.current))
 
     const guessData = { lat, lng, distance, score }
     setMyGuess(guessData)
@@ -173,10 +175,7 @@ export default function GamePage() {
     const info = JSON.parse(stored) as { pseudo: string; playerId: string; isHost: boolean }
     playerInfoRef.current = info
 
-    // Generate cities for the host
-    if (info.isHost) {
-      citiesRef.current = getRandomCities(TOTAL_ROUNDS)
-    }
+    // Cities generated after history catchup (need to know category first)
 
     const client = new Ably.Realtime({
       authCallback: async (tokenParams, callback) => {
@@ -212,12 +211,18 @@ export default function GamePage() {
         let histTotalScores: Record<string, number> = {}
         const histPlayers: Player[] = []
 
+        let histCategory: Category = 'french'
+
         for (const msg of items) {
           if (msg.name === 'game:restart') {
             // Hard reset — nouvelle partie lancée après ce point
             histCity = null; histRound = 0; histStartTime = 0
             histGuesses.length = 0; histTotalScores = {}; histPlayers.length = 0
-            activeRound = false
+            activeRound = false; histCategory = 'french'
+          }
+          if (msg.name === 'game:start') {
+            const d = msg.data as { totalRounds: number; category?: Category }
+            if (d.category) histCategory = d.category
           }
           if (msg.name === 'player:join') {
             const d = msg.data as { playerId: string; pseudo: string; isHost: boolean }
@@ -282,8 +287,16 @@ export default function GamePage() {
             if (mine) setMyGuess({ lat: mine.lat, lng: mine.lng, distance: mine.distance, score: mine.score })
           }
         }
+        // Apply category and generate host cities
+        categoryRef.current = histCategory
+        setCategory(histCategory)
+        if (info.isHost) {
+          citiesRef.current = getRandomCitiesByCategory(histCategory, TOTAL_ROUNDS)
+        }
       } catch (err) {
         console.error('History catchup error:', err)
+        // Fallback: generate cities for host with default category
+        if (info.isHost) citiesRef.current = getRandomCitiesByCategory('french', TOTAL_ROUNDS)
       }
 
       channel.publish('player:join', {
@@ -465,8 +478,8 @@ export default function GamePage() {
             onClick={() => setShowSaucisse(false)}
           >
             <p className="font-black uppercase text-center leading-none"
-              style={{ fontSize: 'clamp(3rem, 14vw, 9rem)', color: '#facc15', textShadow: '0 0 60px rgba(250,204,21,0.5)' }}>
-              OPHIS
+              style={{ fontSize: 'clamp(2.5rem, 12vw, 8rem)', color: '#facc15', textShadow: '0 0 60px rgba(250,204,21,0.5)' }}>
+              {finalScores[finalScores.length - 1]?.pseudo ?? 'OPHIS'}
             </p>
             <p className="font-black uppercase text-center leading-none mt-2"
               style={{ fontSize: 'clamp(2rem, 10vw, 6rem)', color: '#ED2939', textShadow: '0 0 60px rgba(237,41,57,0.5)' }}>
@@ -563,6 +576,7 @@ export default function GamePage() {
             <button
               onClick={() => {
                 channelRef.current?.publish('game:restart', {})
+                router.push(`/room/${code}`)
               }}
               className="flex-1 py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
               style={{ backgroundColor: '#22c55e' }}
@@ -649,6 +663,7 @@ export default function GamePage() {
               ? { lat: roundResultsData.city.lat, lng: roundResultsData.city.lng, name: roundResultsData.city.name }
               : null}
             showLines={phase === 'round-results'}
+            europeanMode={category !== 'french'}
           />
         )}
 
@@ -675,6 +690,7 @@ export default function GamePage() {
             totalScores={roundResultsData.totalScores}
             players={players}
             myPlayerId={info?.playerId || ''}
+            maxDistance={maxDistanceForCategory(category)}
           />
         )}
       </div>

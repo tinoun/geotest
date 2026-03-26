@@ -3,7 +3,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Ably from 'ably'
-import type { Player } from '@/types/game'
+import type { Player, Category } from '@/types/game'
+
+const CATEGORIES: { value: Category; label: string; emoji: string; desc: string }[] = [
+  { value: 'french', emoji: '🇫🇷', label: 'Villes françaises', desc: 'Villes de France' },
+  { value: 'european-countries', emoji: '🌍', label: 'Pays européens', desc: 'Retrouver les pays sur la carte' },
+  { value: 'european-cities', emoji: '🏙️', label: 'Grandes villes EU', desc: 'Capitales et métropoles' },
+]
 
 export default function RoomPage() {
   const router = useRouter()
@@ -14,6 +20,7 @@ export default function RoomPage() {
   const [copied, setCopied] = useState(false)
   const [connected, setConnected] = useState(false)
   const [error, setError] = useState('')
+  const [category, setCategory] = useState<Category>('french')
 
   const channelRef = useRef<ReturnType<Ably.Realtime['channels']['get']> | null>(null)
   const ablyRef = useRef<Ably.Realtime | null>(null)
@@ -125,8 +132,7 @@ export default function RoomPage() {
 
   function startGame() {
     if (!channelRef.current) return
-    // Don't navigate here — handleGameStart fires for all players including host (Ably echo)
-    channelRef.current.publish('game:start', { totalRounds: 10 })
+    channelRef.current.publish('game:start', { totalRounds: 10, category })
   }
 
   const info = playerInfoRef.current
@@ -211,6 +217,34 @@ export default function RoomPage() {
               ))}
             </ul>
           )}
+        </div>
+
+        {/* Category selector */}
+        <div className="bg-slate-800 rounded-2xl p-5 mb-6 border border-slate-700">
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Mode de jeu</h2>
+          <div className="space-y-2">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.value}
+                onClick={() => { if (info?.isHost) setCategory(cat.value) }}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                  category === cat.value
+                    ? 'border-blue-500 bg-blue-900/30 text-white'
+                    : info?.isHost
+                      ? 'border-slate-600 bg-slate-700 text-slate-300 hover:border-slate-500'
+                      : 'border-slate-700 bg-slate-700/50 text-slate-400 cursor-default'
+                }`}
+              >
+                <span className="text-2xl">{cat.emoji}</span>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">{cat.label}</p>
+                  <p className="text-xs text-slate-500">{cat.desc}</p>
+                </div>
+                {category === cat.value && <span className="text-blue-400 text-lg">✓</span>}
+              </button>
+            ))}
+          </div>
+          {!info?.isHost && <p className="text-slate-600 text-xs text-center mt-2">Seul l&apos;hôte peut choisir le mode</p>}
         </div>
 
         {/* Action button */}
