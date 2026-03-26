@@ -8,16 +8,17 @@ export function haversineDistance(lat1: number, lng1: number, lat2: number, lng2
 
 // Distance = facteur principal (4500 pts max, courbe quadratique)
 // Temps = bonus secondaire (500 pts max)
-export function calculateScore(distanceKm: number, timeLeft: number): number {
-  if (distanceKm >= 1000) return 0
-  const distanceScore = Math.round(4500 * Math.pow(1 - distanceKm / 1000, 2))
+// maxDistance: 1000 km (France) ou 4000 km (Europe)
+export function calculateScore(distanceKm: number, timeLeft: number, maxDistance = 1000): number {
+  if (distanceKm >= maxDistance) return 0
+  const distanceScore = Math.round(4500 * Math.pow(1 - distanceKm / maxDistance, 2))
   const timeBonus = distanceScore > 0 ? Math.round(500 * Math.max(0, timeLeft) / 15) : 0
   return distanceScore + timeBonus
 }
 
-export function scoreBreakdown(distanceKm: number, timeLeft: number): { distancePts: number; timePts: number; total: number } {
-  if (distanceKm >= 1000) return { distancePts: 0, timePts: 0, total: 0 }
-  const distancePts = Math.round(4500 * Math.pow(1 - distanceKm / 1000, 2))
+export function scoreBreakdown(distanceKm: number, timeLeft: number, maxDistance = 1000): { distancePts: number; timePts: number; total: number } {
+  if (distanceKm >= maxDistance) return { distancePts: 0, timePts: 0, total: 0 }
+  const distancePts = Math.round(4500 * Math.pow(1 - distanceKm / maxDistance, 2))
   const timePts = distancePts > 0 ? Math.round(500 * Math.max(0, timeLeft) / 15) : 0
   return { distancePts, timePts, total: distancePts + timePts }
 }

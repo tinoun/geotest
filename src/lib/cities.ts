@@ -99,7 +99,128 @@ export const FRENCH_CITIES: City[] = [
   { name: 'Gap', lat: 44.5594, lng: 6.0785, region: 'Provence-Alpes-Côte d\'Azur' },
 ]
 
+export const EUROPEAN_COUNTRIES: City[] = [
+  { name: 'France', lat: 46.23, lng: 2.21, region: 'Europe' },
+  { name: 'Allemagne', lat: 51.17, lng: 10.45, region: 'Europe' },
+  { name: 'Espagne', lat: 40.46, lng: -3.75, region: 'Europe' },
+  { name: 'Italie', lat: 41.87, lng: 12.57, region: 'Europe' },
+  { name: 'Royaume-Uni', lat: 55.38, lng: -3.44, region: 'Europe' },
+  { name: 'Portugal', lat: 39.40, lng: -8.22, region: 'Europe' },
+  { name: 'Pays-Bas', lat: 52.13, lng: 5.29, region: 'Europe' },
+  { name: 'Belgique', lat: 50.50, lng: 4.47, region: 'Europe' },
+  { name: 'Suisse', lat: 46.82, lng: 8.23, region: 'Europe' },
+  { name: 'Autriche', lat: 47.52, lng: 14.55, region: 'Europe' },
+  { name: 'Pologne', lat: 51.92, lng: 19.15, region: 'Europe' },
+  { name: 'Suède', lat: 60.13, lng: 18.64, region: 'Europe' },
+  { name: 'Norvège', lat: 64.57, lng: 17.89, region: 'Europe' },
+  { name: 'Danemark', lat: 56.26, lng: 9.50, region: 'Europe' },
+  { name: 'Finlande', lat: 64.96, lng: 25.75, region: 'Europe' },
+  { name: 'Grèce', lat: 39.07, lng: 21.82, region: 'Europe' },
+  { name: 'République tchèque', lat: 49.82, lng: 15.47, region: 'Europe' },
+  { name: 'Roumanie', lat: 45.94, lng: 24.97, region: 'Europe' },
+  { name: 'Hongrie', lat: 47.16, lng: 19.50, region: 'Europe' },
+  { name: 'Ukraine', lat: 48.38, lng: 31.17, region: 'Europe' },
+  { name: 'Biélorussie', lat: 53.71, lng: 27.95, region: 'Europe' },
+  { name: 'Bulgarie', lat: 42.73, lng: 25.49, region: 'Europe' },
+  { name: 'Serbie', lat: 44.02, lng: 21.01, region: 'Europe' },
+  { name: 'Croatie', lat: 45.10, lng: 15.20, region: 'Europe' },
+  { name: 'Slovaquie', lat: 48.67, lng: 19.70, region: 'Europe' },
+  { name: 'Lituanie', lat: 55.17, lng: 23.88, region: 'Europe' },
+  { name: 'Lettonie', lat: 56.88, lng: 24.60, region: 'Europe' },
+  { name: 'Estonie', lat: 58.60, lng: 25.01, region: 'Europe' },
+  { name: 'Slovénie', lat: 46.15, lng: 14.99, region: 'Europe' },
+  { name: 'Bosnie-Herzégovine', lat: 43.92, lng: 17.68, region: 'Europe' },
+  { name: 'Albanie', lat: 41.15, lng: 20.17, region: 'Europe' },
+  { name: 'Macédoine du Nord', lat: 41.61, lng: 21.75, region: 'Europe' },
+  { name: 'Monténégro', lat: 42.71, lng: 19.37, region: 'Europe' },
+  { name: 'Moldavie', lat: 47.41, lng: 28.37, region: 'Europe' },
+  { name: 'Irlande', lat: 53.41, lng: -8.24, region: 'Europe' },
+  { name: 'Luxembourg', lat: 49.82, lng: 6.13, region: 'Europe' },
+  { name: 'Islande', lat: 64.96, lng: -19.02, region: 'Europe' },
+  { name: 'Chypre', lat: 35.13, lng: 33.43, region: 'Europe' },
+  { name: 'Malte', lat: 35.94, lng: 14.37, region: 'Europe' },
+  { name: 'Kosovo', lat: 42.60, lng: 20.90, region: 'Europe' },
+]
+
+export const EUROPEAN_CITIES: City[] = [
+  { name: 'Londres', lat: 51.51, lng: -0.13, region: 'Royaume-Uni' },
+  { name: 'Berlin', lat: 52.52, lng: 13.40, region: 'Allemagne' },
+  { name: 'Madrid', lat: 40.42, lng: -3.70, region: 'Espagne' },
+  { name: 'Rome', lat: 41.90, lng: 12.50, region: 'Italie' },
+  { name: 'Paris', lat: 48.86, lng: 2.35, region: 'France' },
+  { name: 'Vienne', lat: 48.21, lng: 16.37, region: 'Autriche' },
+  { name: 'Amsterdam', lat: 52.37, lng: 4.90, region: 'Pays-Bas' },
+  { name: 'Bruxelles', lat: 50.85, lng: 4.35, region: 'Belgique' },
+  { name: 'Varsovie', lat: 52.23, lng: 21.01, region: 'Pologne' },
+  { name: 'Prague', lat: 50.08, lng: 14.44, region: 'République tchèque' },
+  { name: 'Budapest', lat: 47.50, lng: 19.04, region: 'Hongrie' },
+  { name: 'Bucarest', lat: 44.43, lng: 26.10, region: 'Roumanie' },
+  { name: 'Athènes', lat: 37.98, lng: 23.73, region: 'Grèce' },
+  { name: 'Stockholm', lat: 59.33, lng: 18.07, region: 'Suède' },
+  { name: 'Oslo', lat: 59.91, lng: 10.75, region: 'Norvège' },
+  { name: 'Copenhague', lat: 55.68, lng: 12.57, region: 'Danemark' },
+  { name: 'Helsinki', lat: 60.17, lng: 24.94, region: 'Finlande' },
+  { name: 'Dublin', lat: 53.33, lng: -6.25, region: 'Irlande' },
+  { name: 'Lisbonne', lat: 38.72, lng: -9.14, region: 'Portugal' },
+  { name: 'Kiev', lat: 50.45, lng: 30.52, region: 'Ukraine' },
+  { name: 'Barcelone', lat: 41.39, lng: 2.16, region: 'Espagne' },
+  { name: 'Munich', lat: 48.14, lng: 11.58, region: 'Allemagne' },
+  { name: 'Milan', lat: 45.46, lng: 9.19, region: 'Italie' },
+  { name: 'Hambourg', lat: 53.55, lng: 10.00, region: 'Allemagne' },
+  { name: 'Francfort', lat: 50.11, lng: 8.68, region: 'Allemagne' },
+  { name: 'Naples', lat: 40.85, lng: 14.27, region: 'Italie' },
+  { name: 'Turin', lat: 45.07, lng: 7.69, region: 'Italie' },
+  { name: 'Séville', lat: 37.39, lng: -5.99, region: 'Espagne' },
+  { name: 'Valence', lat: 39.47, lng: -0.38, region: 'Espagne' },
+  { name: 'Porto', lat: 41.16, lng: -8.63, region: 'Portugal' },
+  { name: 'Rotterdam', lat: 51.92, lng: 4.48, region: 'Pays-Bas' },
+  { name: 'Cracovie', lat: 50.06, lng: 19.94, region: 'Pologne' },
+  { name: 'Sofia', lat: 42.70, lng: 23.32, region: 'Bulgarie' },
+  { name: 'Belgrade', lat: 44.80, lng: 20.47, region: 'Serbie' },
+  { name: 'Zagreb', lat: 45.81, lng: 15.98, region: 'Croatie' },
+  { name: 'Vilnius', lat: 54.69, lng: 25.28, region: 'Lituanie' },
+  { name: 'Riga', lat: 56.95, lng: 24.11, region: 'Lettonie' },
+  { name: 'Tallinn', lat: 59.44, lng: 24.75, region: 'Estonie' },
+  { name: 'Bratislava', lat: 48.15, lng: 17.11, region: 'Slovaquie' },
+  { name: 'Ljubljana', lat: 46.05, lng: 14.51, region: 'Slovénie' },
+  { name: 'Zurich', lat: 47.38, lng: 8.54, region: 'Suisse' },
+  { name: 'Genève', lat: 46.20, lng: 6.14, region: 'Suisse' },
+  { name: 'Cologne', lat: 50.94, lng: 6.96, region: 'Allemagne' },
+  { name: 'Stuttgart', lat: 48.78, lng: 9.18, region: 'Allemagne' },
+  { name: 'Lyon', lat: 45.76, lng: 4.84, region: 'France' },
+  { name: 'Marseille', lat: 43.30, lng: 5.37, region: 'France' },
+  { name: 'Édimbourg', lat: 55.95, lng: -3.19, region: 'Royaume-Uni' },
+  { name: 'Manchester', lat: 53.48, lng: -2.24, region: 'Royaume-Uni' },
+  { name: 'Brême', lat: 53.08, lng: 8.80, region: 'Allemagne' },
+  { name: 'Anvers', lat: 51.22, lng: 4.40, region: 'Belgique' },
+  { name: 'Minsk', lat: 53.90, lng: 27.57, region: 'Biélorussie' },
+  { name: 'Thessalonique', lat: 40.64, lng: 22.94, region: 'Grèce' },
+  { name: 'Göteborg', lat: 57.71, lng: 11.97, region: 'Suède' },
+  { name: 'Poznań', lat: 52.41, lng: 16.93, region: 'Pologne' },
+  { name: 'Wrocław', lat: 51.11, lng: 17.04, region: 'Pologne' },
+  { name: 'Gdańsk', lat: 54.35, lng: 18.65, region: 'Pologne' },
+  { name: 'Palerme', lat: 38.12, lng: 13.36, region: 'Italie' },
+  { name: 'Gênes', lat: 44.41, lng: 8.93, region: 'Italie' },
+  { name: 'Bilbao', lat: 43.26, lng: -2.92, region: 'Espagne' },
+  { name: 'La Haye', lat: 52.08, lng: 4.31, region: 'Pays-Bas' },
+  { name: 'Sarajevo', lat: 43.85, lng: 18.36, region: 'Bosnie-Herzégovine' },
+]
+
+import type { Category } from '@/types/game'
+
+export function getRandomCitiesByCategory(category: Category, count: number): City[] {
+  const pool = category === 'french'
+    ? FRENCH_CITIES
+    : category === 'european-countries'
+      ? EUROPEAN_COUNTRIES
+      : EUROPEAN_CITIES
+  return [...pool].sort(() => Math.random() - 0.5).slice(0, count)
+}
+
 export function getRandomCities(count: number): City[] {
-  const shuffled = [...FRENCH_CITIES].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count)
+  return getRandomCitiesByCategory('french', count)
+}
+
+export function maxDistanceForCategory(category: Category): number {
+  return category === 'french' ? 1000 : 4000
 }

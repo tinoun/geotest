@@ -10,6 +10,7 @@ interface Props {
   totalScores: Record<string, number>
   players: Player[]
   myPlayerId: string
+  maxDistance?: number
 }
 
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -20,10 +21,10 @@ function formatDistance(km: number): string {
   return `${Math.round(km)} km`
 }
 
-export default function RoundResults({ cityName, guesses, roundScores, totalScores, players, myPlayerId }: Props) {
+export default function RoundResults({ cityName, guesses, roundScores, totalScores, players, myPlayerId, maxDistance = 1000 }: Props) {
   const results = players.map(player => {
     const guess = guesses.find(g => g.playerId === player.id)
-    const breakdown = guess ? scoreBreakdown(guess.distance, guess.timeLeft) : null
+    const breakdown = guess ? scoreBreakdown(guess.distance, guess.timeLeft, maxDistance) : null
     return {
       playerId: player.id,
       pseudo: player.pseudo,
