@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
+import Ably from 'ably'
 
 function generateRoomCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -13,6 +14,21 @@ function generateRoomCode(): string {
   return code
 }
 
+interface RoomInfo {
+  code: string
+  hostPseudo: string
+  playerCount: number
+  category: string
+  createdAt: number
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  french: '🇫🇷 Villes françaises',
+  'european-countries': '🌍 Pays européens',
+  'european-cities': '🏙️ Grandes villes EU',
+  'world-capitals': '🌐 Capitales mondiales',
+}
+
 export default function HomePage() {
   const router = useRouter()
   const [pseudo, setPseudo] = useState('')
@@ -20,6 +36,51 @@ export default function HomePage() {
   const [mode, setMode] = useState<'create' | 'join' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [rooms, setRooms] = useState<RoomInfo[]>([])
+  const ablyRef = useRef<Ably.Realtime | null>(null)
+  const channelRef = useRef<ReturnType<Ably.Realtime['channels']['get']> | null>(null)
+
+  useEffect(() => {
+    const tempId = uuidv4()
+    const client = new Ably.Realtime({
+      authCallback: async (tokenParams, callback) => {
+        try {
+          const resp = await fetch('/api/ably/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientId: tempId })
+          })
+          const tokenRequest = await resp.json()
+          callback(null, tokenRequest)
+        } catch (e) {
+          callback(String(e), null)
+        }
+      }
+    })
+    ablyRef.current = client
+
+    const channel = client.channels.get('geoguesser:lobby')
+    channelRef.current = channel
+
+    async function updateRooms() {
+      try {
+        const members = await channel.presence.get()
+        const list: RoomInfo[] = members.map(m => m.data as RoomInfo)
+        list.sort((a, b) => a.createdAt - b.createdAt)
+        setRooms(list)
+      } catch {
+        // ignore
+      }
+    }
+
+    channel.presence.subscribe(() => updateRooms())
+    channel.attach().then(() => updateRooms())
+
+    return () => {
+      channel.presence.unsubscribe()
+      client.close()
+    }
+  }, [])
 
   function handleCreate() {
     if (!pseudo.trim()) {
@@ -48,6 +109,21 @@ export default function HomePage() {
     }
     setLoading(true)
     const code = roomCode.trim().toUpperCase()
+    const playerId = uuidv4()
+    sessionStorage.setItem(`geoguesser:${code}`, JSON.stringify({
+      pseudo: pseudo.trim(),
+      playerId,
+      isHost: false,
+    }))
+    router.push(`/room/${code}`)
+  }
+
+  function handleJoinRoom(code: string) {
+    if (!pseudo.trim()) {
+      setError('Veuillez entrer un pseudo pour rejoindre')
+      return
+    }
+    setLoading(true)
     const playerId = uuidv4()
     sessionStorage.setItem(`geoguesser:${code}`, JSON.stringify({
       pseudo: pseudo.trim(),
@@ -127,7 +203,7 @@ export default function HomePage() {
                 className="w-full py-3 px-6 rounded-xl font-semibold text-white text-lg transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600 hover:border-slate-400"
                 style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
               >
-                🔗 Rejoindre une partie
+                🔗 Rejoindre avec un code
               </button>
             </div>
           )}
@@ -169,6 +245,41 @@ export default function HomePage() {
             </div>
           )}
         </div>
+
+        {/* Active rooms */}
+        {rooms.length > 0 && (
+          <div className="mt-6 bg-slate-800 rounded-2xl p-5 border border-slate-700">
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              Parties en attente
+            </h2>
+            <div className="space-y-2">
+              {rooms.map((room) => (
+                <div
+                  key={room.code}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-700 hover:bg-slate-600 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white truncate">{room.hostPseudo}</span>
+                      <span className="text-slate-400 text-xs">· {room.playerCount} joueur{room.playerCount > 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {CATEGORY_LABELS[room.category] ?? room.category} · <span className="font-mono">{room.code}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleJoinRoom(room.code)}
+                    disabled={loading}
+                    className="shrink-0 py-1.5 px-4 rounded-lg font-semibold text-sm text-white transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                    style={{ backgroundColor: '#002395' }}
+                  >
+                    Rejoindre
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Info */}
         <div className="mt-6 text-center text-slate-500 text-sm">

@@ -5,6 +5,18 @@ import { useRouter, useParams } from 'next/navigation'
 import Ably from 'ably'
 import type { Player, Category } from '@/types/game'
 
+function updateLobbyPresence(
+  channel: ReturnType<Ably.Realtime['channels']['get']> | null,
+  code: string,
+  hostPseudo: string,
+  playerCount: number,
+  category: Category
+) {
+  if (!channel) return
+  channel.presence.update({ code, hostPseudo, playerCount, category, createdAt: Date.now() })
+    .catch(() => {})
+}
+
 const CATEGORIES: { value: Category; label: string; emoji: string; desc: string }[] = [
   { value: 'french', emoji: '🇫🇷', label: 'Villes françaises', desc: 'Villes de France' },
   { value: 'european-countries', emoji: '🌍', label: 'Pays européens', desc: 'Retrouver les pays sur la carte' },
@@ -24,14 +36,32 @@ export default function RoomPage() {
   const [category, setCategory] = useState<Category>('french')
 
   const channelRef = useRef<ReturnType<Ably.Realtime['channels']['get']> | null>(null)
+  const lobbyChannelRef = useRef<ReturnType<Ably.Realtime['channels']['get']> | null>(null)
   const ablyRef = useRef<Ably.Realtime | null>(null)
   const playerInfoRef = useRef<{ pseudo: string; playerId: string; isHost: boolean } | null>(null)
   const playersRef = useRef<Player[]>([])
+  const lobbyJoinedRef = useRef(false)
+  const categoryRef = useRef<Category>('french')
 
   // Keep playersRef in sync with players state
   useEffect(() => {
     playersRef.current = players
   }, [players])
+
+  // Keep categoryRef in sync and update lobby presence on category change
+  useEffect(() => {
+    categoryRef.current = category
+    const info = playerInfoRef.current
+    if (info?.isHost && lobbyJoinedRef.current && lobbyChannelRef.current) {
+      lobbyChannelRef.current.presence.update({
+        code,
+        hostPseudo: info.pseudo,
+        playerCount: playersRef.current.length,
+        category,
+        createdAt: Date.now(),
+      }).catch(() => {})
+    }
+  }, [category, code])
 
   const handlePlayerJoin = useCallback((message: Ably.Message) => {
     const data = message.data as { playerId: string; pseudo: string; isHost: boolean }
@@ -43,10 +73,19 @@ export default function RoomPage() {
       const updated = [...prev, newPlayer]
       playersRef.current = updated
 
-      // If I'm the host, broadcast the full player list
+      // If I'm the host, broadcast the full player list and update lobby presence
       const info = playerInfoRef.current
       if (info?.isHost && channelRef.current) {
         channelRef.current.publish('player:list', { players: updated.map(p => ({ id: p.id, pseudo: p.pseudo, isHost: p.isHost })) })
+        if (lobbyJoinedRef.current && lobbyChannelRef.current) {
+          lobbyChannelRef.current.presence.update({
+            code,
+            hostPseudo: info.pseudo,
+            playerCount: updated.length,
+            category: categoryRef.current,
+            createdAt: Date.now(),
+          }).catch(() => {})
+        }
       }
 
       return updated
@@ -103,23 +142,50 @@ export default function RoomPage() {
     const channel = client.channels.get(`geoguesser:${code}`)
     channelRef.current = channel
 
+    // Lobby channel for room discovery (host only)
+    let lobbyChannel: ReturnType<Ably.Realtime['channels']['get']> | null = null
+    if (info.isHost) {
+      lobbyChannel = client.channels.get('geoguesser:lobby')
+      lobbyChannelRef.current = lobbyChannel
+    }
+
     channel.subscribe('player:join', handlePlayerJoin)
     channel.subscribe('player:list', handlePlayerList)
     channel.subscribe('game:start', handleGameStart)
 
     // Publish our own join
-    channel.attach().then(() => {
+    channel.attach().then(async () => {
       channel.publish('player:join', {
         playerId: info.playerId,
         pseudo: info.pseudo,
         isHost: info.isHost,
       })
+
+      // Host enters lobby presence so others can discover this room
+      if (info.isHost && lobbyChannel) {
+        try {
+          await lobbyChannel.attach()
+          await lobbyChannel.presence.enter({
+            code,
+            hostPseudo: info.pseudo,
+            playerCount: 1,
+            category: 'french',
+            createdAt: Date.now(),
+          })
+          lobbyJoinedRef.current = true
+        } catch (err) {
+          console.error('Failed to enter lobby presence:', err)
+        }
+      }
     }).catch((err) => {
       console.error('Failed to attach channel:', err)
     })
 
     return () => {
       channel.unsubscribe()
+      if (lobbyChannel && lobbyJoinedRef.current) {
+        lobbyChannel.presence.leave().catch(() => {})
+      }
       client.close()
     }
   }, [code, router, handlePlayerJoin, handlePlayerList, handleGameStart])
@@ -133,6 +199,11 @@ export default function RoomPage() {
 
   function startGame() {
     if (!channelRef.current) return
+    // Leave lobby so room no longer appears in discovery list
+    if (lobbyJoinedRef.current && lobbyChannelRef.current) {
+      lobbyChannelRef.current.presence.leave().catch(() => {})
+      lobbyJoinedRef.current = false
+    }
     channelRef.current.publish('game:start', { totalRounds: 10, category })
   }
 
