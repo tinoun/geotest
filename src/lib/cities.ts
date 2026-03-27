@@ -206,14 +206,96 @@ export const EUROPEAN_CITIES: City[] = [
   { name: 'Sarajevo', lat: 43.85, lng: 18.36, region: 'Bosnie-Herzégovine' },
 ]
 
+export const WORLD_CAPITALS: City[] = [
+  { name: 'Tokyo', lat: 35.68, lng: 139.69, region: 'Asie' },
+  { name: 'Pékin', lat: 39.91, lng: 116.39, region: 'Asie' },
+  { name: 'New Delhi', lat: 28.61, lng: 77.21, region: 'Asie' },
+  { name: 'Moscou', lat: 55.75, lng: 37.62, region: 'Europe' },
+  { name: 'Washington D.C.', lat: 38.91, lng: -77.04, region: 'Amériques' },
+  { name: 'Brasília', lat: -15.78, lng: -47.93, region: 'Amériques' },
+  { name: 'Buenos Aires', lat: -34.60, lng: -58.38, region: 'Amériques' },
+  { name: 'Le Caire', lat: 30.04, lng: 31.24, region: 'Afrique' },
+  { name: 'Jakarta', lat: -6.21, lng: 106.85, region: 'Asie' },
+  { name: 'Bangkok', lat: 13.75, lng: 100.52, region: 'Asie' },
+  { name: 'Mexico', lat: 19.43, lng: -99.13, region: 'Amériques' },
+  { name: 'Nairobi', lat: -1.29, lng: 36.82, region: 'Afrique' },
+  { name: 'Séoul', lat: 37.57, lng: 126.98, region: 'Asie' },
+  { name: 'Ankara', lat: 39.93, lng: 32.86, region: 'Asie' },
+  { name: 'Riyad', lat: 24.69, lng: 46.72, region: 'Asie' },
+  { name: 'Téhéran', lat: 35.69, lng: 51.39, region: 'Asie' },
+  { name: 'Bagdad', lat: 33.34, lng: 44.40, region: 'Asie' },
+  { name: 'Islamabad', lat: 33.72, lng: 73.06, region: 'Asie' },
+  { name: 'Kaboul', lat: 34.53, lng: 69.17, region: 'Asie' },
+  { name: 'Dacca', lat: 23.72, lng: 90.41, region: 'Asie' },
+  { name: 'Rangoun', lat: 16.87, lng: 96.19, region: 'Asie' },
+  { name: 'Hanoï', lat: 21.03, lng: 105.85, region: 'Asie' },
+  { name: 'Phnom Penh', lat: 11.56, lng: 104.92, region: 'Asie' },
+  { name: 'Vientiane', lat: 17.97, lng: 102.60, region: 'Asie' },
+  { name: 'Kuala Lumpur', lat: 3.14, lng: 101.69, region: 'Asie' },
+  { name: 'Singapour', lat: 1.35, lng: 103.82, region: 'Asie' },
+  { name: 'Manille', lat: 14.60, lng: 120.98, region: 'Asie' },
+  { name: 'Colombo', lat: 6.93, lng: 79.85, region: 'Asie' },
+  { name: 'Katmandou', lat: 27.71, lng: 85.31, region: 'Asie' },
+  { name: 'Tachkent', lat: 41.30, lng: 69.24, region: 'Asie' },
+  { name: 'Astana', lat: 51.19, lng: 71.45, region: 'Asie' },
+  { name: 'Tbilissi', lat: 41.69, lng: 44.83, region: 'Asie' },
+  { name: 'Erevan', lat: 40.18, lng: 44.51, region: 'Asie' },
+  { name: 'Bakou', lat: 40.41, lng: 49.87, region: 'Asie' },
+  { name: 'Tel Aviv', lat: 32.08, lng: 34.78, region: 'Asie' },
+  { name: 'Amman', lat: 31.96, lng: 35.95, region: 'Asie' },
+  { name: 'Beyrouth', lat: 33.89, lng: 35.50, region: 'Asie' },
+  { name: 'Damas', lat: 33.51, lng: 36.29, region: 'Asie' },
+  { name: 'Doha', lat: 25.29, lng: 51.53, region: 'Asie' },
+  { name: 'Abu Dhabi', lat: 24.47, lng: 54.37, region: 'Asie' },
+  { name: 'Koweït', lat: 29.37, lng: 47.98, region: 'Asie' },
+  { name: 'Abuja', lat: 9.06, lng: 7.50, region: 'Afrique' },
+  { name: 'Accra', lat: 5.56, lng: -0.20, region: 'Afrique' },
+  { name: 'Addis-Abeba', lat: 9.03, lng: 38.74, region: 'Afrique' },
+  { name: 'Kinshasa', lat: -4.32, lng: 15.32, region: 'Afrique' },
+  { name: 'Luanda', lat: -8.84, lng: 13.23, region: 'Afrique' },
+  { name: 'Alger', lat: 36.74, lng: 3.06, region: 'Afrique' },
+  { name: 'Tunis', lat: 36.82, lng: 10.17, region: 'Afrique' },
+  { name: 'Rabat', lat: 34.01, lng: -6.85, region: 'Afrique' },
+  { name: 'Tripoli', lat: 32.90, lng: 13.18, region: 'Afrique' },
+  { name: 'Khartoum', lat: 15.55, lng: 32.53, region: 'Afrique' },
+  { name: 'Dakar', lat: 14.73, lng: -17.47, region: 'Afrique' },
+  { name: 'Yaoundé', lat: 3.87, lng: 11.52, region: 'Afrique' },
+  { name: 'Harare', lat: -17.83, lng: 31.05, region: 'Afrique' },
+  { name: 'Pretoria', lat: -25.75, lng: 28.19, region: 'Afrique' },
+  { name: 'Antananarivo', lat: -18.91, lng: 47.54, region: 'Afrique' },
+  { name: 'Bamako', lat: 12.65, lng: -8.00, region: 'Afrique' },
+  { name: 'Niamey', lat: 13.51, lng: 2.12, region: 'Afrique' },
+  { name: 'Ottawa', lat: 45.42, lng: -75.70, region: 'Amériques' },
+  { name: 'La Havane', lat: 23.14, lng: -82.36, region: 'Amériques' },
+  { name: 'Panama', lat: 8.99, lng: -79.52, region: 'Amériques' },
+  { name: 'Bogotá', lat: 4.71, lng: -74.07, region: 'Amériques' },
+  { name: 'Quito', lat: -0.23, lng: -78.52, region: 'Amériques' },
+  { name: 'Lima', lat: -12.05, lng: -77.04, region: 'Amériques' },
+  { name: 'La Paz', lat: -16.50, lng: -68.15, region: 'Amériques' },
+  { name: 'Santiago', lat: -33.46, lng: -70.65, region: 'Amériques' },
+  { name: 'Montevideo', lat: -34.90, lng: -56.19, region: 'Amériques' },
+  { name: 'Asunción', lat: -25.29, lng: -57.65, region: 'Amériques' },
+  { name: 'Caracas', lat: 10.48, lng: -66.88, region: 'Amériques' },
+  { name: 'Georgetown', lat: 6.80, lng: -58.16, region: 'Amériques' },
+  { name: 'Canberra', lat: -35.28, lng: 149.13, region: 'Océanie' },
+  { name: 'Wellington', lat: -41.29, lng: 174.78, region: 'Océanie' },
+  { name: 'Port Moresby', lat: -9.44, lng: 147.18, region: 'Océanie' },
+  { name: 'Londres', lat: 51.51, lng: -0.13, region: 'Europe' },
+  { name: 'Berlin', lat: 52.52, lng: 13.40, region: 'Europe' },
+  { name: 'Madrid', lat: 40.42, lng: -3.70, region: 'Europe' },
+  { name: 'Rome', lat: 41.90, lng: 12.50, region: 'Europe' },
+  { name: 'Paris', lat: 48.86, lng: 2.35, region: 'Europe' },
+  { name: 'Varsovie', lat: 52.23, lng: 21.01, region: 'Europe' },
+  { name: 'Kyiv', lat: 50.45, lng: 30.52, region: 'Europe' },
+]
+
 import type { Category } from '@/types/game'
 
 export function getRandomCitiesByCategory(category: Category, count: number): City[] {
-  const pool = category === 'french'
-    ? FRENCH_CITIES
-    : category === 'european-countries'
-      ? EUROPEAN_COUNTRIES
-      : EUROPEAN_CITIES
+  const pool = category === 'french' ? FRENCH_CITIES
+    : category === 'european-countries' ? EUROPEAN_COUNTRIES
+    : category === 'european-cities' ? EUROPEAN_CITIES
+    : WORLD_CAPITALS
   return [...pool].sort(() => Math.random() - 0.5).slice(0, count)
 }
 
@@ -222,5 +304,7 @@ export function getRandomCities(count: number): City[] {
 }
 
 export function maxDistanceForCategory(category: Category): number {
-  return category === 'french' ? 1000 : 4000
+  if (category === 'french') return 1000
+  if (category === 'world-capitals') return 10000
+  return 4000
 }

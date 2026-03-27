@@ -17,7 +17,7 @@ interface Props {
   otherGuesses?: OtherGuess[]
   correctAnswer?: { lat: number; lng: number; name: string } | null
   showLines?: boolean
-  europeanMode?: boolean
+  mapMode?: 'france' | 'europe' | 'world'
 }
 
 const GUESS_COLORS = ['#ef4444', '#f97316', '#a855f7', '#06b6d4', '#84cc16']
@@ -86,7 +86,7 @@ export default function FranceMap({
   otherGuesses = [],
   correctAnswer,
   showLines,
-  europeanMode = false,
+  mapMode = 'france',
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -99,10 +99,16 @@ export default function FranceMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
+    const MAP_CONFIGS = {
+      france: { center: [46.603354, 1.888334] as [number, number], zoom: 5, minZoom: 4 },
+      europe: { center: [54, 15] as [number, number], zoom: 3, minZoom: 2 },
+      world: { center: [20, 0] as [number, number], zoom: 2, minZoom: 1 },
+    }
+    const config = MAP_CONFIGS[mapMode]
     const map = L.map(containerRef.current, {
-      center: europeanMode ? [54, 15] : [46.603354, 1.888334],
-      zoom: europeanMode ? 3 : 5,
-      minZoom: europeanMode ? 2 : 4,
+      center: config.center,
+      zoom: config.zoom,
+      minZoom: config.minZoom,
       maxZoom: 10,
       zoomControl: true,
     })

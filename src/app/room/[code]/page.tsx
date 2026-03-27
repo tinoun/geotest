@@ -9,6 +9,7 @@ const CATEGORIES: { value: Category; label: string; emoji: string; desc: string 
   { value: 'french', emoji: '🇫🇷', label: 'Villes françaises', desc: 'Villes de France' },
   { value: 'european-countries', emoji: '🌍', label: 'Pays européens', desc: 'Retrouver les pays sur la carte' },
   { value: 'european-cities', emoji: '🏙️', label: 'Grandes villes EU', desc: 'Capitales et métropoles' },
+  { value: 'world-capitals', emoji: '🌐', label: 'Capitales mondiales', desc: 'Capitales des pays du monde entier' },
 ]
 
 export default function RoomPage() {
