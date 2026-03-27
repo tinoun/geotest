@@ -16,6 +16,10 @@ const TOTAL_ROUNDS = 10
 const ROUND_DURATION = 15
 const GUESS_COLORS = ['#ef4444', '#f97316', '#a855f7', '#06b6d4', '#84cc16']
 
+function generateRoomCode(): string {
+  return Math.random().toString(36).substring(2, 8).toUpperCase()
+}
+
 function distanceColor(km: number): string {
   if (km < 50) return '#22c55e'
   if (km < 150) return '#84cc16'
@@ -34,6 +38,7 @@ export default function GamePage() {
   const [currentCity, setCurrentCity] = useState<City | null>(null)
   const [roundStartTime, setRoundStartTime] = useState(0)
   const [myGuess, setMyGuess] = useState<{ lat: number; lng: number; distance: number; score: number } | null>(null)
+  const [provisionalGuess, setProvisionalGuess] = useState<{ lat: number; lng: number; distance: number } | null>(null)
   const [allGuesses, setAllGuesses] = useState<Guess[]>([])
   const [totalScores, setTotalScores] = useState<Record<string, number>>({})
   const [players, setPlayers] = useState<Player[]>([])
@@ -58,6 +63,8 @@ export default function GamePage() {
 
   const channelRef = useRef<ReturnType<Ably.Realtime['channels']['get']> | null>(null)
   const playerInfoRef = useRef<{ pseudo: string; playerId: string; isHost: boolean } | null>(null)
+  const provisionalGuessRef = useRef<{ lat: number; lng: number; distance: number } | null>(null)
+  const myGuessRef = useRef<{ lat: number; lng: number; distance: number; score: number } | null>(null)
 
   // Refs for stale closure avoidance
   const phaseRef = useRef<GamePhase>('connecting')
@@ -142,28 +149,36 @@ export default function GamePage() {
   const handleGuess = useCallback((lat: number, lng: number) => {
     if (phaseRef.current !== 'guessing') return
     if (!currentCityRef.current) return
-
-    const channel = channelRef.current
-    const info = playerInfoRef.current
-    if (!channel || !info) return
+    if (myGuessRef.current) return // already submitted
 
     const distance = haversineDistance(lat, lng, currentCityRef.current.lat, currentCityRef.current.lng)
-    const timeLeft = Math.max(0, ROUND_DURATION - (Date.now() - roundStartTime) / 1000)
-    const score = calculateScore(distance, timeLeft, maxDistanceForCategory(categoryRef.current))
+    const provisional = { lat, lng, distance }
+    provisionalGuessRef.current = provisional
+    setProvisionalGuess(provisional)
+  }, [])
 
-    const guessData = { lat, lng, distance, score }
-    setMyGuess(guessData)
+  const submitGuess = useCallback((timeLeft: number) => {
+    if (myGuessRef.current) return // already submitted
+    const provisional = provisionalGuessRef.current
+    const channel = channelRef.current
+    const info = playerInfoRef.current
+    if (!provisional || !channel || !info) return
+
+    const score = calculateScore(provisional.distance, timeLeft, maxDistanceForCategory(categoryRef.current))
+    const submitted = { lat: provisional.lat, lng: provisional.lng, distance: provisional.distance, score }
+    myGuessRef.current = submitted
+    setMyGuess(submitted)
 
     channel.publish('player:guess', {
       playerId: info.playerId,
       pseudo: info.pseudo,
-      lat,
-      lng,
+      lat: provisional.lat,
+      lng: provisional.lng,
       timeLeft,
-      distance,
+      distance: provisional.distance,
       score,
     })
-  }, [roundStartTime])
+  }, [])
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`geoguesser:${code}`)
@@ -349,6 +364,9 @@ export default function GamePage() {
       setRound(data.round)
       roundRef.current = data.round
       setMyGuess(null)
+      setProvisionalGuess(null)
+      provisionalGuessRef.current = null
+      myGuessRef.current = null
       setAllGuesses([])
       allGuessesRef.current = []
       setRoundResultsData(null)
@@ -416,11 +434,36 @@ export default function GamePage() {
       router.push(`/room/${code}`)
     })
 
+    channel.subscribe('game:newroom', (message) => {
+      const { newCode } = message.data as { newCode: string }
+      const info = playerInfoRef.current
+      if (!info) return
+      sessionStorage.setItem(`geoguesser:${newCode}`, JSON.stringify({
+        pseudo: info.pseudo,
+        playerId: info.playerId,
+        isHost: false,
+      }))
+      router.push(`/room/${newCode}`)
+    })
+
     return () => {
       channel.unsubscribe()
       client.close()
     }
   }, [code, router, startRound, endRound])
+
+  // Auto-submit provisional guess when timer expires
+  useEffect(() => {
+    if (phase !== 'guessing' || roundStartTime === 0) return
+    const remaining = ROUND_DURATION * 1000 - (Date.now() - roundStartTime)
+    if (remaining <= 0) return
+    const t = setTimeout(() => {
+      if (!myGuessRef.current && provisionalGuessRef.current) {
+        submitGuess(0)
+      }
+    }, remaining)
+    return () => clearTimeout(t)
+  }, [phase, roundStartTime, submitGuess])
 
   // Host timer: end round after 15.5s
   useEffect(() => {
@@ -575,8 +618,16 @@ export default function GamePage() {
           <div className="flex gap-3">
             <button
               onClick={() => {
-                channelRef.current?.publish('game:restart', {})
-                router.push(`/room/${code}`)
+                const info = playerInfoRef.current
+                if (!info) return
+                const newCode = generateRoomCode()
+                sessionStorage.setItem(`geoguesser:${newCode}`, JSON.stringify({
+                  pseudo: info.pseudo,
+                  playerId: info.playerId,
+                  isHost: true,
+                }))
+                channelRef.current?.publish('game:newroom', { newCode })
+                router.push(`/room/${newCode}`)
               }}
               className="flex-1 py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
               style={{ backgroundColor: '#22c55e' }}
@@ -657,27 +708,54 @@ export default function GamePage() {
           <FranceMap
             onGuess={phase === 'guessing' ? handleGuess : undefined}
             disabled={phase !== 'guessing' || !!myGuess}
-            myGuess={myGuess}
+            myGuess={myGuess ?? provisionalGuess}
             otherGuesses={phase === 'round-results' ? mapOtherGuesses : []}
             correctAnswer={phase === 'round-results' && roundResultsData?.city
               ? { lat: roundResultsData.city.lat, lng: roundResultsData.city.lng, name: roundResultsData.city.name }
               : null}
             showLines={phase === 'round-results'}
-            europeanMode={category !== 'french'}
+            mapMode={category === 'french' ? 'france' : category === 'world-capitals' ? 'world' : 'europe'}
           />
         )}
 
         {/* My guess feedback */}
-        {phase === 'guessing' && myGuess && (
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10">
-            <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-600 rounded-2xl px-8 py-5 text-center shadow-2xl">
-              <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Distance</p>
-              <p className="text-6xl font-black leading-none" style={{ color: distanceColor(myGuess.distance) }}>
-                {Math.round(myGuess.distance)} <span className="text-3xl font-bold">km</span>
-              </p>
-              <p className="text-2xl font-bold mt-2" style={{ color: '#22c55e' }}>+{myGuess.score} pts</p>
-              <p className="text-xs text-slate-500 mt-3 animate-pulse">En attente des autres joueurs...</p>
-            </div>
+        {phase === 'guessing' && (
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-sm px-4">
+            {!myGuess && !provisionalGuess && (
+              <div className="bg-slate-900/90 backdrop-blur-sm border border-slate-600 rounded-2xl px-6 py-4 text-center">
+                <p className="text-slate-300 text-lg">Cliquez sur la carte pour placer votre réponse</p>
+                <p className="text-slate-500 text-sm mt-1">Vous pouvez déplacer le marqueur</p>
+              </div>
+            )}
+
+            {!myGuess && provisionalGuess && (
+              <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-600 rounded-2xl px-6 py-4 text-center shadow-2xl">
+                <p className="text-5xl font-black leading-none" style={{ color: distanceColor(provisionalGuess.distance) }}>
+                  {Math.round(provisionalGuess.distance)} <span className="text-2xl font-bold">km</span>
+                </p>
+                <p className="text-slate-400 text-sm mt-1 mb-3">Déplacez ou confirmez</p>
+                <button
+                  onClick={() => {
+                    const timeLeft = Math.max(0, ROUND_DURATION - (Date.now() - roundStartTime) / 1000)
+                    submitGuess(timeLeft)
+                  }}
+                  className="w-full py-3 rounded-xl font-bold text-white text-lg transition-all hover:opacity-90 active:scale-95"
+                  style={{ backgroundColor: '#22c55e' }}
+                >
+                  Confirmer
+                </button>
+              </div>
+            )}
+
+            {myGuess && (
+              <div className="bg-slate-900/95 backdrop-blur-sm border border-slate-600 rounded-2xl px-6 py-4 text-center shadow-2xl">
+                <p className="text-5xl font-black leading-none" style={{ color: distanceColor(myGuess.distance) }}>
+                  {Math.round(myGuess.distance)} <span className="text-2xl font-bold">km</span>
+                </p>
+                <p className="text-xl font-bold mt-1" style={{ color: '#22c55e' }}>+{myGuess.score} pts</p>
+                <p className="text-xs text-slate-500 mt-2 animate-pulse">En attente des autres joueurs...</p>
+              </div>
+            )}
           </div>
         )}
 

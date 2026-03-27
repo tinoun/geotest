@@ -23,4 +23,4 @@ export interface Guess {
 
 export type GamePhase = 'connecting' | 'waiting' | 'guessing' | 'round-results' | 'game-over'
 
-export type Category = 'french' | 'european-countries' | 'european-cities'
+export type Category = 'french' | 'european-countries' | 'european-cities' | 'world-capitals'
